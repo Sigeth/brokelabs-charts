@@ -29,6 +29,34 @@ subjects:
     name: opslab-operator
     namespace: {{ .Release.Namespace }}
 ---
+# Files of challenges installed from registries, stored next to the platform.
+# Namespaced, so it is not generated from the operator's markers.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: opslab-operator-packages
+  namespace: {{ .Release.Namespace }}
+  labels: {{- include "opslab.labels" . | nindent 4 }}
+rules:
+  - apiGroups: [""]
+    resources: [configmaps]
+    verbs: [update]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: opslab-operator-packages
+  namespace: {{ .Release.Namespace }}
+  labels: {{- include "opslab.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: opslab-operator-packages
+subjects:
+  - kind: ServiceAccount
+    name: opslab-operator
+    namespace: {{ .Release.Namespace }}
+---
 {{- if eq .Values.profile "cluster" }}
 # Leader election (several replicas).
 apiVersion: rbac.authorization.k8s.io/v1
@@ -96,6 +124,9 @@ spec:
             # (setup) and the gateway (terminals).
             - --operator-pod-labels=app.kubernetes.io/instance={{ .Release.Name }},app.kubernetes.io/name={{ $name }}
             - --gateway-pod-labels=app.kubernetes.io/instance={{ .Release.Name }},app.kubernetes.io/name=gateway
+            {{- with .Values.operator.plainHTTPRegistries }}
+            - --plain-http-registries={{ join "," . }}
+            {{- end }}
             {{- if eq .Values.profile "cluster" }}
             - --leader-elect
             {{- end }}

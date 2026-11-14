@@ -32,6 +32,9 @@ platform:
 operator:
   # Built-in checker image. Defaults to <image.registry>/opslab-checker:<versions.checker>.
   checkerImage: ""
+  # Registries the operator reaches over plain HTTP (host:port), for local
+  # test registries only. Packages always come over HTTPS otherwise.
+  plainHTTPRegistries: []
   resources:
     requests: {cpu: 50m, memory: 64Mi}
     limits: {memory: 256Mi}
