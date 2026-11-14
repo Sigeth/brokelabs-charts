@@ -35,6 +35,13 @@ operator:
   # Registries the operator reaches over plain HTTP (host:port), for local
   # test registries only. Packages always come over HTTPS otherwise.
   plainHTTPRegistries: []
+  # Sigstore trusted root verifying keyless signatures (the official catalog).
+  # By default the operator fetches it from the Sigstore public-good TUF
+  # repository when first needed. Air-gapped installs put a trusted_root.json
+  # in a ConfigMap of the release namespace and name it here.
+  sigstoreTrustedRoot:
+    configMap: ""
+    key: trusted_root.json
   resources:
     requests: {cpu: 50m, memory: 64Mi}
     limits: {memory: 256Mi}

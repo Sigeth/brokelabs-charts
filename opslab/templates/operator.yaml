@@ -127,6 +127,9 @@ spec:
             {{- with .Values.operator.plainHTTPRegistries }}
             - --plain-http-registries={{ join "," . }}
             {{- end }}
+            {{- if .Values.operator.sigstoreTrustedRoot.configMap }}
+            - --sigstore-trusted-root=/etc/opslab/sigstore/trusted_root.json
+            {{- end }}
             {{- if eq .Values.profile "cluster" }}
             - --leader-elect
             {{- end }}
@@ -143,3 +146,12 @@ spec:
             httpGet: {path: /readyz, port: probes}
           securityContext: {{- include "opslab.containerSecurityContext" . | nindent 12 }}
           resources: {{- toYaml .Values.operator.resources | nindent 12 }}
+          {{- with .Values.operator.sigstoreTrustedRoot.configMap }}
+          volumeMounts:
+            - {name: sigstore-trusted-root, mountPath: /etc/opslab/sigstore, readOnly: true}
+      volumes:
+        - name: sigstore-trusted-root
+          configMap:
+            name: {{ . }}
+            items: [{key: {{ $.Values.operator.sigstoreTrustedRoot.key }}, path: trusted_root.json}]
+          {{- end }}
