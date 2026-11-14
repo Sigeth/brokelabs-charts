@@ -4,9 +4,19 @@ profile: single
 
 image:
   registry: ghcr.io/sigeth
-  # Defaults to the chart appVersion.
+  # Overrides the tag of every component image (e.g. "dev"). Empty: each
+  # component uses its released version below.
   tag: ""
   pullPolicy: IfNotPresent
+
+# Released version of each component image (<registry>/opslab-<component>).
+# Components are versioned on their own: bump one when it is released.
+versions:
+  operator: v0.4.0
+  checker: v0.3.0
+  api: v0.2.0
+  web: v0.2.0
+  gateway: v0.3.0
 
 # Namespace holding ChallengeInstances, CheckRuns and instance resources.
 instancesNamespace:
@@ -20,7 +30,7 @@ platform:
   maxInstanceLifetime: 4h
 
 operator:
-  # Built-in checker image. Defaults to <image.registry>/opslab-checker:<tag>.
+  # Built-in checker image. Defaults to <image.registry>/opslab-checker:<versions.checker>.
   checkerImage: ""
   resources:
     requests: {cpu: 50m, memory: 64Mi}

@@ -4,7 +4,7 @@ Helm chart of opslab (working name): the operator, the api (which also serves th
 
 > Status: M1. Single-machine profile with a PostgreSQL pod; the cluster profile adds replicas and leader election.
 
-The chart's `appVersion` is the platform release: every component image is `ghcr.io/sigeth/opslab-<component>:v<appVersion>`, published by each component's `release` workflow when it is tagged.
+Components are versioned on their own: `versions` in `values.yaml` pins the released tag of each component image (`ghcr.io/sigeth/opslab-<component>:<version>`, published by the component's `release` workflow when it is tagged). Bump a component there when it is released.
 
 ## Install
 
@@ -16,13 +16,15 @@ helm install opslab ./opslab --namespace opslab-system --create-namespace --set 
 | Value | Default | |
 |---|---|---|
 | `profile` | `single` | `single`: one Linux machine, `cluster`: 2 replicas + leader election |
-| `image.registry` / `image.tag` | `ghcr.io/sigeth` / appVersion | Component images `opslab-<component>` |
+| `image.registry` | `ghcr.io/sigeth` | Registry of the component images `opslab-<component>` |
+| `versions.<component>` | released versions | Tag of each component image (operator, checker, api, web, gateway) |
+| `image.tag` | empty | Overrides the tag of every component (e.g. `dev`) |
 | `instancesNamespace.name` | `opslab-instances` | Namespace of student instances (Pod Security `restricted`) |
 | `platform.*` | | Cluster-wide policy (`PlatformConfig`) |
 | `api.signingKeySecret` | generated | Secret holding the Ed25519 access token key (`key.pem`) |
 | `api.allowedOrigins` | `https://<httpRoute.hostname>` | Origins allowed to change state with the session cookie (CSRF) |
 | `gateway.publicURL` | `https://<httpRoute.gatewayHostname>` | Gateway URL as browsers reach it (terminals) |
-| `operator.checkerImage` | `<image.registry>/opslab-checker:<tag>` | Built-in checker |
+| `operator.checkerImage` | `<image.registry>/opslab-checker:<versions.checker>` | Built-in checker |
 | `solo.username` / `solo.passwordSecret` | `admin` / generated | Solo mode account. The generated password is in the `opslab-solo` Secret. |
 | `postgres.enabled` | `true` | Single PostgreSQL pod with a PVC. Set `false` and `api.databaseSecret` (key `url`) for an external database. |
 | `httpRoute.*` | disabled | Gateway API routes for the UI/api and the gateway |

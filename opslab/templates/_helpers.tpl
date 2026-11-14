@@ -10,9 +10,12 @@ app.kubernetes.io/instance: {{ .root.Release.Name }}
 app.kubernetes.io/name: {{ .name }}
 {{- end }}
 
-{{/* Fully qualified image of a component: (dict "root" $ "name" "api") */}}
+{{/* Fully qualified image of a component: (dict "root" $ "name" "api").
+     image.tag overrides every component; otherwise versions.<name>. */}}
 {{- define "opslab.image" -}}
-{{ .root.Values.image.registry }}/opslab-{{ .name }}:{{ .root.Values.image.tag | default (printf "v%s" .root.Chart.AppVersion) }}
+{{- $tag := .root.Values.image.tag | default (index .root.Values.versions .name) -}}
+{{- if not $tag -}}{{- fail (printf "no image version for %s: set versions.%s" .name .name) -}}{{- end -}}
+{{ .root.Values.image.registry }}/opslab-{{ .name }}:{{ $tag }}
 {{- end }}
 
 {{- define "opslab.replicas" -}}
