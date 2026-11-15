@@ -1,7 +1,8 @@
 # Least privilege per component (architecture §11).
 #
 # api: reads installed challenges and package files, manages instances and
-# check runs. gateway: reads instances. The operator binds the *-exec roles in
+# check runs, and installs challenges and catalog sources for admins (the
+# marketplace). gateway: reads instances. The operator binds the *-exec roles in
 # each instance namespace only, so the gateway (terminals) and the checker
 # can exec into the machines of an instance and nowhere else.
 apiVersion: v1
@@ -18,7 +19,10 @@ metadata:
   labels: {{- include "opslab.labels" . | nindent 4 }}
 rules:
   - apiGroups: [opslab.io]
-    resources: [challenges]
+    resources: [challenges, catalogsources]
+    verbs: [get, list, watch, create, update, delete]
+  - apiGroups: [opslab.io]
+    resources: [platformconfigs]
     verbs: [get, list, watch]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
