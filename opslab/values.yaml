@@ -24,10 +24,19 @@ instancesNamespace:
   create: true
 
 # Cluster-wide policy (the PlatformConfig named "default").
+# Policy checked against the permissions every challenge needs (D41): a
+# challenge asking for more is installed but not runnable, until the policy
+# allows it.
 platform:
   allowedRuntimes: []
   allowedEgress: none
   maxInstanceLifetime: 4h
+  # CPU and memory the machines of one instance may request, e.g. {cpu: "4", memory: 8Gi}.
+  maxInstanceResources: {}
+  # Kinds ("Kind" or "Kind.group") extraManifests may create. Empty allows the
+  # defaults (workloads and their configuration, no RBAC or NetworkPolicy);
+  # ["*"] allows every namespaced kind.
+  allowedExtraManifestKinds: []
 
 # Catalogs challenges are installed from (D40). The official catalog is
 # verified like any other source: only its release workflow is trusted, through

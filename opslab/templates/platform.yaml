@@ -21,3 +21,9 @@ spec:
   {{- end }}
   allowedEgress: {{ .Values.platform.allowedEgress }}
   maxInstanceLifetime: {{ .Values.platform.maxInstanceLifetime }}
+  {{- with .Values.platform.maxInstanceResources }}
+  maxInstanceResources: {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with .Values.platform.allowedExtraManifestKinds }}
+  allowedExtraManifestKinds: {{ toYaml . | nindent 4 }}
+  {{- end }}
