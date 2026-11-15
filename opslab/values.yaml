@@ -120,6 +120,9 @@ solo:
 # Nodes pull through it after "opslab mirror node-config".
 mirror:
   enabled: true
+  # Existing Secret with the push credentials ("username", "password" and
+  # their "htpasswd" bcrypt entry) instead of generated ones.
+  existingSecret: ""
   image: ghcr.io/project-zot/zot-linux-amd64:v2.1.8
   storage:
     size: 20Gi

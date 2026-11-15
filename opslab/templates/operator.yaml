@@ -127,6 +127,11 @@ spec:
             {{- with .Values.operator.plainHTTPRegistries }}
             - --plain-http-registries={{ join "," . }}
             {{- end }}
+            {{- if .Values.mirror.enabled }}
+            # Push access to the registry mirror (PlatformConfig.registryMirror),
+            # read at every copy so that new credentials need no restart.
+            - --mirror-credentials=/etc/opslab/mirror
+            {{- end }}
             {{- if .Values.operator.sigstoreTrustedRoot.configMap }}
             - --sigstore-trusted-root=/etc/opslab/sigstore/trusted_root.json
             {{- end }}
@@ -137,15 +142,7 @@ spec:
             - name: POD_NAMESPACE
               valueFrom:
                 fieldRef: {fieldPath: metadata.namespace}
-            {{- if .Values.mirror.enabled }}
-            # Push access to the registry mirror (PlatformConfig.registryMirror).
-            - name: OPSLAB_MIRROR_USERNAME
-              valueFrom:
-                secretKeyRef: {name: opslab-mirror-credentials, key: username}
-            - name: OPSLAB_MIRROR_PASSWORD
-              valueFrom:
-                secretKeyRef: {name: opslab-mirror-credentials, key: password}
-            {{- end }}
+
           ports:
             - {name: metrics, containerPort: 8080}
             - {name: probes, containerPort: 8081}
@@ -155,12 +152,23 @@ spec:
             httpGet: {path: /readyz, port: probes}
           securityContext: {{- include "opslab.containerSecurityContext" . | nindent 12 }}
           resources: {{- toYaml .Values.operator.resources | nindent 12 }}
-          {{- with .Values.operator.sigstoreTrustedRoot.configMap }}
           volumeMounts:
+            {{- if .Values.mirror.enabled }}
+            - {name: mirror-credentials, mountPath: /etc/opslab/mirror, readOnly: true}
+            {{- end }}
+            {{- if .Values.operator.sigstoreTrustedRoot.configMap }}
             - {name: sigstore-trusted-root, mountPath: /etc/opslab/sigstore, readOnly: true}
+            {{- end }}
       volumes:
+        {{- if .Values.mirror.enabled }}
+        - name: mirror-credentials
+          secret:
+            secretName: {{ include "opslab.mirrorSecret" . }}
+            items: [{key: username, path: username}, {key: password, path: password}]
+        {{- end }}
+        {{- with .Values.operator.sigstoreTrustedRoot.configMap }}
         - name: sigstore-trusted-root
           configMap:
             name: {{ . }}
             items: [{key: {{ $.Values.operator.sigstoreTrustedRoot.key }}, path: trusted_root.json}]
-          {{- end }}
+        {{- end }}

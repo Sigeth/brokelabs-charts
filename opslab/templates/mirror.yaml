@@ -7,9 +7,12 @@ anonymous (pulls are pinned by digest, so the mirror cannot serve other
 content); only the operator may push.
 */}}
 {{- $name := "mirror" -}}
-{{- $existing := lookup "v1" "Secret" .Release.Namespace "opslab-mirror-credentials" }}
-{{- $password := "" }}
+{{- $secret := include "opslab.mirrorSecret" . }}
 {{- $htpasswd := "" }}
+{{- if not .Values.mirror.existingSecret }}
+{{- /* Keep the generated credentials across upgrades. */}}
+{{- $existing := lookup "v1" "Secret" .Release.Namespace $secret }}
+{{- $password := "" }}
 {{- if $existing }}
 {{- $password = index $existing.data "password" | b64dec }}
 {{- $htpasswd = index $existing.data "htpasswd" | b64dec }}
@@ -30,6 +33,7 @@ stringData:
   password: {{ $password | quote }}
   htpasswd: {{ $htpasswd | quote }}
 ---
+{{- end }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -110,6 +114,8 @@ spec:
         app.kubernetes.io/name: {{ $name }}
       annotations:
         checksum/config: {{ .Values.mirror | toJson | sha256sum }}
+        # Zot reads its htpasswd file at startup.
+        checksum/credentials: {{ $htpasswd | sha256sum }}
     spec:
       securityContext:
         {{- include "opslab.podSecurityContext" . | nindent 8 }}
@@ -140,7 +146,7 @@ spec:
           configMap: {name: opslab-mirror}
         - name: auth
           secret:
-            secretName: opslab-mirror-credentials
+            secretName: {{ $secret }}
             items: [{key: htpasswd, path: htpasswd}]
         - name: data
           persistentVolumeClaim: {claimName: opslab-mirror}

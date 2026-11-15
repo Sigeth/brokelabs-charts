@@ -56,3 +56,8 @@ http://localhost:8081
 https://{{ .Values.httpRoute.hostname }}
 {{- end -}}
 {{- end }}
+
+{{- /* Secret with the push credentials of the registry mirror. */}}
+{{- define "opslab.mirrorSecret" -}}
+{{- .Values.mirror.existingSecret | default "opslab-mirror-credentials" -}}
+{{- end }}
