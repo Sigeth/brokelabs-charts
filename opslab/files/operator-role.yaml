@@ -85,6 +85,27 @@ rules:
 - apiGroups:
   - opslab.io
   resources:
+  - catalogsources
+  - checkruns
+  - platformconfigs
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - opslab.io
+  resources:
+  - catalogsources/status
+  - challengeinstances/status
+  - challenges/status
+  - checkruns/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - opslab.io
+  resources:
   - challengeinstances
   verbs:
   - delete
@@ -102,22 +123,11 @@ rules:
 - apiGroups:
   - opslab.io
   resources:
-  - challengeinstances/status
-  - challenges/status
-  - checkruns/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - opslab.io
-  resources:
   - challenges
-  - checkruns
-  - platformconfigs
   verbs:
   - get
   - list
+  - update
   - watch
 - apiGroups:
   - rbac.authorization.k8s.io
