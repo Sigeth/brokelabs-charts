@@ -1,0 +1,14 @@
+{{- with .Values.catalogs.official }}
+{{- if .enabled }}
+apiVersion: opslab.io/v1alpha1
+kind: CatalogSource
+metadata:
+  name: official
+  labels:
+    {{- include "opslab.labels" $ | nindent 4 }}
+spec:
+  ref: {{ .ref }}
+  syncInterval: {{ .syncInterval }}
+  trust: {{- toYaml .trust | nindent 4 }}
+{{- end }}
+{{- end }}

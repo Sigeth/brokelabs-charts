@@ -29,6 +29,19 @@ platform:
   allowedEgress: none
   maxInstanceLifetime: 4h
 
+# Catalogs challenges are installed from (D40). The official catalog is
+# verified like any other source: only its release workflow is trusted, through
+# Sigstore keyless signatures. Disable it for air-gapped or school-only installs.
+catalogs:
+  official:
+    enabled: true
+    ref: ghcr.io/sigeth/opslab-catalog:latest
+    syncInterval: 1h
+    trust:
+      keyless:
+        - issuer: https://token.actions.githubusercontent.com
+          subjectRegExp: '^https://github\.com/Sigeth/opslab-challenges/\.github/workflows/release\.yaml@refs/tags/.+$'
+
 operator:
   # Built-in checker image. Defaults to <image.registry>/opslab-checker:<versions.checker>.
   checkerImage: ""
