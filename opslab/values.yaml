@@ -115,6 +115,23 @@ solo:
 
 # Single PostgreSQL pod. Disable it to use an external database
 # (api.databaseSecret).
+# In-cluster registry mirror (Zot, D39): installed challenges and their images
+# are copied into it, so instances start without the internet once installed.
+# Nodes pull through it after "opslab mirror node-config".
+mirror:
+  enabled: true
+  image: ghcr.io/project-zot/zot-linux-amd64:v2.1.8
+  storage:
+    size: 20Gi
+    storageClass: ""
+  service:
+    # Fixed ClusterIP (inside the service CIDR), so the containerd
+    # configuration of the nodes can name it. Empty: assigned by Kubernetes.
+    clusterIP: ""
+  resources:
+    requests: {cpu: 50m, memory: 128Mi}
+    limits: {memory: 1Gi}
+
 postgres:
   enabled: true
   # Existing Secret with "password" and "url" (the api's connection URL)

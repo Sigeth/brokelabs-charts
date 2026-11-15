@@ -137,6 +137,15 @@ spec:
             - name: POD_NAMESPACE
               valueFrom:
                 fieldRef: {fieldPath: metadata.namespace}
+            {{- if .Values.mirror.enabled }}
+            # Push access to the registry mirror (PlatformConfig.registryMirror).
+            - name: OPSLAB_MIRROR_USERNAME
+              valueFrom:
+                secretKeyRef: {name: opslab-mirror-credentials, key: username}
+            - name: OPSLAB_MIRROR_PASSWORD
+              valueFrom:
+                secretKeyRef: {name: opslab-mirror-credentials, key: password}
+            {{- end }}
           ports:
             - {name: metrics, containerPort: 8080}
             - {name: probes, containerPort: 8081}

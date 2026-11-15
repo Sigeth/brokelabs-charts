@@ -21,6 +21,9 @@ spec:
   {{- end }}
   allowedEgress: {{ .Values.platform.allowedEgress }}
   maxInstanceLifetime: {{ .Values.platform.maxInstanceLifetime }}
+  {{- if .Values.mirror.enabled }}
+  registryMirror: opslab-mirror.{{ .Release.Namespace }}.svc:5000
+  {{- end }}
   {{- with .Values.platform.maxInstanceResources }}
   maxInstanceResources: {{- toYaml . | nindent 4 }}
   {{- end }}
