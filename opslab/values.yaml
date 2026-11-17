@@ -14,9 +14,9 @@ image:
 versions:
   operator: v0.5.0
   checker: v0.4.0
-  api: v0.3.0
+  api: v0.3.1
   web: v0.3.0
-  gateway: v0.3.0
+  gateway: v0.3.1
 
 # Namespace holding ChallengeInstances, CheckRuns and instance resources.
 instancesNamespace:
