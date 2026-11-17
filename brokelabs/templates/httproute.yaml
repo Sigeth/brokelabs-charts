@@ -5,26 +5,26 @@
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: opslab-api
+  name: brokelabs-api
   namespace: {{ .Release.Namespace }}
-  labels: {{- include "opslab.labels" . | nindent 4 }}
+  labels: {{- include "brokelabs.labels" . | nindent 4 }}
 spec:
   parentRefs: {{- toYaml .Values.httpRoute.parentRefs | nindent 4 }}
   hostnames: [{{ .Values.httpRoute.hostname | quote }}]
   rules:
     - backendRefs:
-        - {name: opslab-api, port: {{ .Values.api.service.port }}}
+        - {name: brokelabs-api, port: {{ .Values.api.service.port }}}
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: opslab-gateway
+  name: brokelabs-gateway
   namespace: {{ .Release.Namespace }}
-  labels: {{- include "opslab.labels" . | nindent 4 }}
+  labels: {{- include "brokelabs.labels" . | nindent 4 }}
 spec:
   parentRefs: {{- toYaml .Values.httpRoute.parentRefs | nindent 4 }}
   hostnames: [{{ .Values.httpRoute.gatewayHostname | quote }}]
   rules:
     - backendRefs:
-        - {name: opslab-gateway, port: {{ .Values.gateway.service.port }}}
+        - {name: brokelabs-gateway, port: {{ .Values.gateway.service.port }}}
 {{- end }}

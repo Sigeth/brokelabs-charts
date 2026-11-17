@@ -2,12 +2,12 @@
 {{- /*
 In-cluster registry mirror (Zot, D39). The operator copies installed packages,
 their signatures and every image they use into it; each node's containerd is
-configured to pull through it ("opslab mirror node-config"). Reads are
+configured to pull through it ("brokelabs mirror node-config"). Reads are
 anonymous (pulls are pinned by digest, so the mirror cannot serve other
 content); only the operator may push.
 */}}
 {{- $name := "mirror" -}}
-{{- $secret := include "opslab.mirrorSecret" . }}
+{{- $secret := include "brokelabs.mirrorSecret" . }}
 {{- $htpasswd := "" }}
 {{- if not .Values.mirror.existingSecret }}
 {{- /* Keep the generated credentials across upgrades. */}}
@@ -18,18 +18,18 @@ content); only the operator may push.
 {{- $htpasswd = index $existing.data "htpasswd" | b64dec }}
 {{- else }}
 {{- $password = randAlphaNum 32 }}
-{{- $htpasswd = htpasswd "opslab-operator" $password }}
+{{- $htpasswd = htpasswd "brokelabs-operator" $password }}
 {{- end }}
 apiVersion: v1
 kind: Secret
 metadata:
-  name: opslab-mirror-credentials
+  name: brokelabs-mirror-credentials
   namespace: {{ .Release.Namespace }}
-  labels: {{- include "opslab.labels" . | nindent 4 }}
+  labels: {{- include "brokelabs.labels" . | nindent 4 }}
 type: Opaque
 stringData:
   # The operator pushes with these; Zot reads the htpasswd entry.
-  username: opslab-operator
+  username: brokelabs-operator
   password: {{ $password | quote }}
   htpasswd: {{ $htpasswd | quote }}
 ---
@@ -37,9 +37,9 @@ stringData:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: opslab-mirror
+  name: brokelabs-mirror
   namespace: {{ .Release.Namespace }}
-  labels: {{- include "opslab.labels" . | nindent 4 }}
+  labels: {{- include "brokelabs.labels" . | nindent 4 }}
 data:
   config.json: |
     {
@@ -53,7 +53,7 @@ data:
           "repositories": {
             "**": {
               "anonymousPolicy": ["read"],
-              "policies": [{"users": ["opslab-operator"], "actions": ["read", "create", "update", "delete"]}]
+              "policies": [{"users": ["brokelabs-operator"], "actions": ["read", "create", "update", "delete"]}]
             }
           }
         }
@@ -64,24 +64,24 @@ data:
 apiVersion: v1
 kind: Service
 metadata:
-  name: opslab-mirror
+  name: brokelabs-mirror
   namespace: {{ .Release.Namespace }}
-  labels: {{- include "opslab.labels" . | nindent 4 }}
+  labels: {{- include "brokelabs.labels" . | nindent 4 }}
 spec:
   {{- with .Values.mirror.service.clusterIP }}
   # Fixed, so the containerd configuration of the nodes can name it.
   clusterIP: {{ . }}
   {{- end }}
-  selector: {{- include "opslab.selector" (dict "root" . "name" $name) | nindent 4 }}
+  selector: {{- include "brokelabs.selector" (dict "root" . "name" $name) | nindent 4 }}
   ports:
     - {name: registry, port: 5000, targetPort: registry}
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: opslab-mirror
+  name: brokelabs-mirror
   namespace: {{ .Release.Namespace }}
-  labels: {{- include "opslab.labels" . | nindent 4 }}
+  labels: {{- include "brokelabs.labels" . | nindent 4 }}
   annotations:
     # Mirrored images survive a chart uninstall.
     helm.sh/resource-policy: keep
@@ -97,20 +97,20 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: opslab-mirror
+  name: brokelabs-mirror
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "opslab.labels" . | nindent 4 }}
+    {{- include "brokelabs.labels" . | nindent 4 }}
     app.kubernetes.io/name: {{ $name }}
 spec:
   replicas: 1
   strategy: {type: Recreate} # one writer of the volume
   selector:
-    matchLabels: {{- include "opslab.selector" (dict "root" . "name" $name) | nindent 6 }}
+    matchLabels: {{- include "brokelabs.selector" (dict "root" . "name" $name) | nindent 6 }}
   template:
     metadata:
       labels:
-        {{- include "opslab.labels" . | nindent 8 }}
+        {{- include "brokelabs.labels" . | nindent 8 }}
         app.kubernetes.io/name: {{ $name }}
       annotations:
         checksum/config: {{ .Values.mirror | toJson | sha256sum }}
@@ -118,7 +118,7 @@ spec:
         checksum/credentials: {{ $htpasswd | sha256sum }}
     spec:
       securityContext:
-        {{- include "opslab.podSecurityContext" . | nindent 8 }}
+        {{- include "brokelabs.podSecurityContext" . | nindent 8 }}
         fsGroup: 65532
       nodeSelector:
         kubernetes.io/arch: amd64
@@ -134,7 +134,7 @@ spec:
           livenessProbe:
             httpGet: {path: /v2/, port: registry}
             initialDelaySeconds: 10
-          securityContext: {{- include "opslab.containerSecurityContext" . | nindent 12 }}
+          securityContext: {{- include "brokelabs.containerSecurityContext" . | nindent 12 }}
           resources: {{- toYaml .Values.mirror.resources | nindent 12 }}
           volumeMounts:
             - {name: config, mountPath: /etc/zot/config.json, subPath: config.json, readOnly: true}
@@ -143,13 +143,13 @@ spec:
             - {name: tmp, mountPath: /tmp}
       volumes:
         - name: config
-          configMap: {name: opslab-mirror}
+          configMap: {name: brokelabs-mirror}
         - name: auth
           secret:
             secretName: {{ $secret }}
             items: [{key: htpasswd, path: htpasswd}]
         - name: data
-          persistentVolumeClaim: {claimName: opslab-mirror}
+          persistentVolumeClaim: {claimName: brokelabs-mirror}
         - name: tmp
           emptyDir: {}
 {{- end }}

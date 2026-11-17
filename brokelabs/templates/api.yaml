@@ -1,0 +1,126 @@
+{{- $name := "api" -}}
+{{- $secret := .Values.api.signingKeySecret | default "brokelabs-api-signing-key" -}}
+{{- if not .Values.api.signingKeySecret }}
+{{- /* Keep the generated key across upgrades: tokens and the gateway's keys stay valid. */}}
+{{- $existing := lookup "v1" "Secret" .Release.Namespace $secret }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ $secret }}
+  namespace: {{ .Release.Namespace }}
+  labels: {{- include "brokelabs.labels" . | nindent 4 }}
+type: Opaque
+data:
+  {{- if $existing }}
+  key.pem: {{ index $existing.data "key.pem" }}
+  {{- else }}
+  key.pem: {{ genPrivateKey "ed25519" | b64enc }}
+  {{- end }}
+---
+{{- end }}
+{{- if not .Values.solo.passwordSecret }}
+{{- $solo := lookup "v1" "Secret" .Release.Namespace "brokelabs-solo" }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: brokelabs-solo
+  namespace: {{ .Release.Namespace }}
+  labels: {{- include "brokelabs.labels" . | nindent 4 }}
+type: Opaque
+data:
+  {{- if $solo }}
+  password: {{ index $solo.data "password" }}
+  {{- else }}
+  password: {{ randAlphaNum 20 | b64enc }}
+  {{- end }}
+---
+{{- end }}
+{{- if and (not .Values.postgres.enabled) (not .Values.api.databaseSecret) }}
+{{- fail "api.databaseSecret is required when postgres.enabled is false" }}
+{{- end }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: brokelabs-api
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "brokelabs.labels" . | nindent 4 }}
+    app.kubernetes.io/name: {{ $name }}
+spec:
+  replicas: {{ include "brokelabs.replicas" . }}
+  selector:
+    matchLabels: {{- include "brokelabs.selector" (dict "root" . "name" $name) | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "brokelabs.labels" . | nindent 8 }}
+        app.kubernetes.io/name: {{ $name }}
+    spec:
+      serviceAccountName: brokelabs-api
+      securityContext: {{- include "brokelabs.podSecurityContext" . | nindent 8 }}
+      nodeSelector:
+        kubernetes.io/arch: amd64
+      initContainers:
+        # The web image only carries the built UI: copy it next to the api.
+        - name: web
+          image: {{ include "brokelabs.image" (dict "root" . "name" "web") }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: [cp, -r, /dist/., /web/]
+          volumeMounts:
+            - {name: web, mountPath: /web}
+          securityContext: {{- include "brokelabs.containerSecurityContext" . | nindent 12 }}
+      containers:
+        - name: api
+          image: {{ include "brokelabs.image" (dict "root" . "name" $name) }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - {name: BROKELABS_LISTEN, value: "0.0.0.0:8080"}
+            - {name: BROKELABS_WEB_DIR, value: /web}
+            - {name: BROKELABS_SIGNING_KEY_FILE, value: /etc/brokelabs/signing-key/key.pem}
+            - {name: BROKELABS_LOG_FORMAT, value: json}
+            - {name: BROKELABS_DATABASE_URL_FILE, value: /etc/brokelabs/database/url}
+            - {name: BROKELABS_INSTANCES_NAMESPACE, value: {{ .Values.instancesNamespace.name }}}
+            - {name: BROKELABS_SYSTEM_NAMESPACE, value: {{ .Release.Namespace }}}
+            - {name: BROKELABS_GATEWAY_URL, value: {{ include "brokelabs.gatewayURL" . | quote }}}
+            - {name: BROKELABS_ALLOWED_ORIGINS, value: {{ include "brokelabs.allowedOrigins" . | quote }}}
+            - {name: BROKELABS_COOKIE_SECURE, value: {{ .Values.api.cookieSecure | quote }}}
+            - {name: BROKELABS_SOLO_USERNAME, value: {{ .Values.solo.username | quote }}}
+            - {name: BROKELABS_SOLO_PASSWORD_FILE, value: /etc/brokelabs/solo/password}
+          ports:
+            - {name: http, containerPort: 8080}
+          livenessProbe:
+            httpGet: {path: /healthz, port: http}
+          readinessProbe:
+            httpGet: {path: /healthz, port: http}
+          volumeMounts:
+            - {name: web, mountPath: /web, readOnly: true}
+            - {name: signing-key, mountPath: /etc/brokelabs/signing-key, readOnly: true}
+            - {name: database, mountPath: /etc/brokelabs/database, readOnly: true}
+            - {name: solo, mountPath: /etc/brokelabs/solo, readOnly: true}
+          securityContext: {{- include "brokelabs.containerSecurityContext" . | nindent 12 }}
+          resources: {{- toYaml .Values.api.resources | nindent 12 }}
+      volumes:
+        - name: web
+          emptyDir: {}
+        - name: signing-key
+          secret:
+            secretName: {{ $secret }}
+        - name: database
+          secret:
+            secretName: {{ .Values.api.databaseSecret | default .Values.postgres.existingSecret | default "brokelabs-postgres" }}
+            items: [{key: url, path: url}]
+        - name: solo
+          secret:
+            secretName: {{ .Values.solo.passwordSecret | default "brokelabs-solo" }}
+            items: [{key: password, path: password}]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: brokelabs-api
+  namespace: {{ .Release.Namespace }}
+  labels: {{- include "brokelabs.labels" . | nindent 4 }}
+spec:
+  selector: {{- include "brokelabs.selector" (dict "root" . "name" $name) | nindent 4 }}
+  ports:
+    - {name: http, port: {{ .Values.api.service.port }}, targetPort: http}

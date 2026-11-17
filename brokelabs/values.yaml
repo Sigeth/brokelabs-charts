@@ -9,18 +9,18 @@ image:
   tag: ""
   pullPolicy: IfNotPresent
 
-# Released version of each component image (<registry>/opslab-<component>).
+# Released version of each component image (<registry>/brokelabs-<component>).
 # Components are versioned on their own: bump one when it is released.
 versions:
-  operator: v0.5.0
-  checker: v0.4.0
-  api: v0.3.1
-  web: v0.3.0
-  gateway: v0.3.1
+  operator: v0.6.0
+  checker: v0.5.0
+  api: v0.4.0
+  web: v0.4.0
+  gateway: v0.4.0
 
 # Namespace holding ChallengeInstances, CheckRuns and instance resources.
 instancesNamespace:
-  name: opslab-instances
+  name: brokelabs-instances
   create: true
 
 # Cluster-wide policy (the PlatformConfig named "default").
@@ -44,15 +44,15 @@ platform:
 catalogs:
   official:
     enabled: true
-    ref: ghcr.io/sigeth/opslab-catalog:latest
+    ref: ghcr.io/sigeth/brokelabs-catalog:latest
     syncInterval: 1h
     trust:
       keyless:
         - issuer: https://token.actions.githubusercontent.com
-          subjectRegExp: '^https://github\.com/Sigeth/opslab-challenges/\.github/workflows/release\.yaml@refs/tags/.+$'
+          subjectRegExp: '^https://github\.com/Sigeth/brokelabs-challenges/\.github/workflows/release\.yaml@refs/tags/.+$'
 
 operator:
-  # Built-in checker image. Defaults to <image.registry>/opslab-checker:<versions.checker>.
+  # Built-in checker image. Defaults to <image.registry>/brokelabs-checker:<versions.checker>.
   checkerImage: ""
   # Registries the operator reaches over plain HTTP (host:port), for local
   # test registries only. Packages always come over HTTPS otherwise.
@@ -76,7 +76,7 @@ api:
   # postgres.enabled is false.
   databaseSecret: ""
   # Origins allowed to send state-changing requests (CSRF protection), e.g.
-  # https://opslab.example.org. Defaults to https://<httpRoute.hostname>.
+  # https://brokelabs.example.org. Defaults to https://<httpRoute.hostname>.
   allowedOrigins: []
   # Session cookies over HTTPS only (browsers accept them on http://localhost).
   cookieSecure: true
@@ -100,14 +100,14 @@ gateway:
 httpRoute:
   enabled: false
   parentRefs: []
-  # Platform UI and api, e.g. opslab.example.org
+  # Platform UI and api, e.g. brokelabs.example.org
   hostname: ""
-  # Gateway (terminals), e.g. gw.opslab.example.org
+  # Gateway (terminals), e.g. gw.brokelabs.example.org
   gatewayHostname: ""
 
-# Solo mode: one local account for an individual running opslab for
+# Solo mode: one local account for an individual running BrokeLabs for
 # themselves. The password is generated at install time and kept across
-# upgrades (Secret opslab-solo, key "password"), unless passwordSecret names
+# upgrades (Secret brokelabs-solo, key "password"), unless passwordSecret names
 # an existing Secret with a "password" key.
 solo:
   username: admin
@@ -117,7 +117,7 @@ solo:
 # (api.databaseSecret).
 # In-cluster registry mirror (Zot, D39): installed challenges and their images
 # are copied into it, so instances start without the internet once installed.
-# Nodes pull through it after "opslab mirror node-config".
+# Nodes pull through it after "brokelabs mirror node-config".
 mirror:
   enabled: true
   # Existing Secret with the push credentials ("username", "password" and

@@ -1,4 +1,4 @@
-CHART := opslab
+CHART := brokelabs
 
 .PHONY: all sync lint template verify-generated
 
@@ -15,8 +15,8 @@ lint:
 ## template: render the chart (both profiles) into rendered/
 template:
 	mkdir -p rendered
-	helm template opslab $(CHART) --namespace opslab-system > rendered/single.yaml
-	helm template opslab $(CHART) --namespace opslab-system --set profile=cluster > rendered/cluster.yaml
+	helm template brokelabs $(CHART) --namespace brokelabs-system > rendered/single.yaml
+	helm template brokelabs $(CHART) --namespace brokelabs-system --set profile=cluster > rendered/cluster.yaml
 
 ## verify-generated: fail if the synced files differ from the pinned tags (CI)
 verify-generated: sync

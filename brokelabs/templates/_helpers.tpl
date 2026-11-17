@@ -1,28 +1,28 @@
-{{- define "opslab.labels" -}}
-app.kubernetes.io/part-of: opslab
+{{- define "brokelabs.labels" -}}
+app.kubernetes.io/part-of: brokelabs
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version }}
 {{- end }}
 
-{{- define "opslab.selector" -}}
+{{- define "brokelabs.selector" -}}
 app.kubernetes.io/instance: {{ .root.Release.Name }}
 app.kubernetes.io/name: {{ .name }}
 {{- end }}
 
 {{/* Fully qualified image of a component: (dict "root" $ "name" "api").
      image.tag overrides every component; otherwise versions.<name>. */}}
-{{- define "opslab.image" -}}
+{{- define "brokelabs.image" -}}
 {{- $tag := .root.Values.image.tag | default (index .root.Values.versions .name) -}}
 {{- if not $tag -}}{{- fail (printf "no image version for %s: set versions.%s" .name .name) -}}{{- end -}}
-{{ .root.Values.image.registry }}/opslab-{{ .name }}:{{ $tag }}
+{{ .root.Values.image.registry }}/brokelabs-{{ .name }}:{{ $tag }}
 {{- end }}
 
-{{- define "opslab.replicas" -}}
+{{- define "brokelabs.replicas" -}}
 {{ if eq .Values.profile "cluster" }}2{{ else }}1{{ end }}
 {{- end }}
 
-{{- define "opslab.podSecurityContext" -}}
+{{- define "brokelabs.podSecurityContext" -}}
 runAsNonRoot: true
 runAsUser: 65532
 runAsGroup: 65532
@@ -30,7 +30,7 @@ seccompProfile:
   type: RuntimeDefault
 {{- end }}
 
-{{- define "opslab.containerSecurityContext" -}}
+{{- define "brokelabs.containerSecurityContext" -}}
 allowPrivilegeEscalation: false
 readOnlyRootFilesystem: true
 capabilities:
@@ -38,7 +38,7 @@ capabilities:
 {{- end }}
 
 {{/* Public URL of the gateway, for browsers. */}}
-{{- define "opslab.gatewayURL" -}}
+{{- define "brokelabs.gatewayURL" -}}
 {{- if .Values.gateway.publicURL -}}
 {{ .Values.gateway.publicURL }}
 {{- else if .Values.httpRoute.gatewayHostname -}}
@@ -49,7 +49,7 @@ http://localhost:8081
 {{- end }}
 
 {{/* Origins allowed to change state with the session cookie (CSRF). */}}
-{{- define "opslab.allowedOrigins" -}}
+{{- define "brokelabs.allowedOrigins" -}}
 {{- if .Values.api.allowedOrigins -}}
 {{ join "," .Values.api.allowedOrigins }}
 {{- else if .Values.httpRoute.hostname -}}
@@ -58,6 +58,6 @@ https://{{ .Values.httpRoute.hostname }}
 {{- end }}
 
 {{- /* Secret with the push credentials of the registry mirror. */}}
-{{- define "opslab.mirrorSecret" -}}
-{{- .Values.mirror.existingSecret | default "opslab-mirror-credentials" -}}
+{{- define "brokelabs.mirrorSecret" -}}
+{{- .Values.mirror.existingSecret | default "brokelabs-mirror-credentials" -}}
 {{- end }}

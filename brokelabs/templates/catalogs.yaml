@@ -1,11 +1,11 @@
 {{- with .Values.catalogs.official }}
 {{- if .enabled }}
-apiVersion: opslab.io/v1alpha1
+apiVersion: brokelabs.io/v1alpha1
 kind: CatalogSource
 metadata:
   name: official
   labels:
-    {{- include "opslab.labels" $ | nindent 4 }}
+    {{- include "brokelabs.labels" $ | nindent 4 }}
 spec:
   ref: {{ .ref }}
   syncInterval: {{ .syncInterval }}

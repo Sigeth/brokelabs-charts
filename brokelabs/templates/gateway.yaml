@@ -1,0 +1,51 @@
+{{- $name := "gateway" -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: brokelabs-gateway
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "brokelabs.labels" . | nindent 4 }}
+    app.kubernetes.io/name: {{ $name }}
+spec:
+  replicas: {{ include "brokelabs.replicas" . }}
+  selector:
+    matchLabels: {{- include "brokelabs.selector" (dict "root" . "name" $name) | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "brokelabs.labels" . | nindent 8 }}
+        app.kubernetes.io/name: {{ $name }}
+    spec:
+      serviceAccountName: brokelabs-gateway
+      securityContext: {{- include "brokelabs.podSecurityContext" . | nindent 8 }}
+      nodeSelector:
+        kubernetes.io/arch: amd64
+      containers:
+        - name: gateway
+          image: {{ include "brokelabs.image" (dict "root" . "name" $name) }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - {name: BROKELABS_LISTEN, value: "0.0.0.0:8081"}
+            - name: BROKELABS_JWKS_URL
+              value: http://brokelabs-api.{{ .Release.Namespace }}.svc:{{ .Values.api.service.port }}/.well-known/jwks.json
+            - {name: BROKELABS_LOG_FORMAT, value: json}
+          ports:
+            - {name: http, containerPort: 8081}
+          livenessProbe:
+            httpGet: {path: /healthz, port: http}
+          readinessProbe:
+            httpGet: {path: /readyz, port: http}
+          securityContext: {{- include "brokelabs.containerSecurityContext" . | nindent 12 }}
+          resources: {{- toYaml .Values.gateway.resources | nindent 12 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: brokelabs-gateway
+  namespace: {{ .Release.Namespace }}
+  labels: {{- include "brokelabs.labels" . | nindent 4 }}
+spec:
+  selector: {{- include "brokelabs.selector" (dict "root" . "name" $name) | nindent 4 }}
+  ports:
+    - {name: http, port: {{ .Values.gateway.service.port }}, targetPort: http}

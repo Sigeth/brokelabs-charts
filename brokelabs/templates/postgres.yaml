@@ -1,9 +1,9 @@
 {{- if .Values.postgres.enabled }}
 {{- $name := "postgres" -}}
-{{- $secret := .Values.postgres.existingSecret | default "opslab-postgres" }}
+{{- $secret := .Values.postgres.existingSecret | default "brokelabs-postgres" }}
 {{- if not .Values.postgres.existingSecret }}
 {{- /* Keep the generated password across upgrades. */}}
-{{- $existing := lookup "v1" "Secret" .Release.Namespace "opslab-postgres" }}
+{{- $existing := lookup "v1" "Secret" .Release.Namespace "brokelabs-postgres" }}
 {{- $password := "" }}
 {{- if $existing }}
 {{- $password = index $existing.data "password" | b64dec }}
@@ -13,24 +13,24 @@
 apiVersion: v1
 kind: Secret
 metadata:
-  name: opslab-postgres
+  name: brokelabs-postgres
   namespace: {{ .Release.Namespace }}
-  labels: {{- include "opslab.labels" . | nindent 4 }}
+  labels: {{- include "brokelabs.labels" . | nindent 4 }}
 type: Opaque
 stringData:
   password: {{ $password | quote }}
-  # Read by the api (OPSLAB_DATABASE_URL_FILE).
-  url: {{ printf "postgres://opslab:%s@opslab-postgres.%s.svc:5432/opslab" $password .Release.Namespace | quote }}
+  # Read by the api (BROKELABS_DATABASE_URL_FILE).
+  url: {{ printf "postgres://brokelabs:%s@brokelabs-postgres.%s.svc:5432/brokelabs" $password .Release.Namespace | quote }}
 ---
 {{- end }}
 apiVersion: v1
 kind: Service
 metadata:
-  name: opslab-postgres
+  name: brokelabs-postgres
   namespace: {{ .Release.Namespace }}
-  labels: {{- include "opslab.labels" . | nindent 4 }}
+  labels: {{- include "brokelabs.labels" . | nindent 4 }}
 spec:
-  selector: {{- include "opslab.selector" (dict "root" . "name" $name) | nindent 4 }}
+  selector: {{- include "brokelabs.selector" (dict "root" . "name" $name) | nindent 4 }}
   ports:
     - {name: postgres, port: 5432, targetPort: postgres}
 ---
@@ -39,20 +39,20 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: opslab-postgres
+  name: brokelabs-postgres
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "opslab.labels" . | nindent 4 }}
+    {{- include "brokelabs.labels" . | nindent 4 }}
     app.kubernetes.io/name: {{ $name }}
 spec:
-  serviceName: opslab-postgres
+  serviceName: brokelabs-postgres
   replicas: 1
   selector:
-    matchLabels: {{- include "opslab.selector" (dict "root" . "name" $name) | nindent 6 }}
+    matchLabels: {{- include "brokelabs.selector" (dict "root" . "name" $name) | nindent 6 }}
   template:
     metadata:
       labels:
-        {{- include "opslab.labels" . | nindent 8 }}
+        {{- include "brokelabs.labels" . | nindent 8 }}
         app.kubernetes.io/name: {{ $name }}
     spec:
       securityContext:
@@ -70,8 +70,8 @@ spec:
           image: {{ .Values.postgres.image }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           env:
-            - {name: POSTGRES_USER, value: opslab}
-            - {name: POSTGRES_DB, value: opslab}
+            - {name: POSTGRES_USER, value: brokelabs}
+            - {name: POSTGRES_DB, value: brokelabs}
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef: {name: {{ $secret }}, key: password}
@@ -80,12 +80,12 @@ spec:
             - {name: postgres, containerPort: 5432}
           readinessProbe:
             exec:
-              command: [pg_isready, -U, opslab, -d, opslab]
+              command: [pg_isready, -U, brokelabs, -d, brokelabs]
           volumeMounts:
             - {name: data, mountPath: /var/lib/postgresql/data}
             - {name: run, mountPath: /var/run/postgresql}
             - {name: tmp, mountPath: /tmp}
-          securityContext: {{- include "opslab.containerSecurityContext" . | nindent 12 }}
+          securityContext: {{- include "brokelabs.containerSecurityContext" . | nindent 12 }}
           resources: {{- toYaml .Values.postgres.resources | nindent 12 }}
       volumes:
         - {name: run, emptyDir: {}}

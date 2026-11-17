@@ -2,31 +2,31 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: opslab-operator
+  name: brokelabs-operator
   namespace: {{ .Release.Namespace }}
-  labels: {{- include "opslab.labels" . | nindent 4 }}
+  labels: {{- include "brokelabs.labels" . | nindent 4 }}
 ---
 # Rules generated from the operator's +kubebuilder:rbac markers (files/operator-role.yaml).
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: opslab-operator
-  labels: {{- include "opslab.labels" . | nindent 4 }}
+  name: brokelabs-operator
+  labels: {{- include "brokelabs.labels" . | nindent 4 }}
 rules:
   {{- (.Files.Get "files/operator-role.yaml" | fromYaml).rules | toYaml | nindent 2 }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: opslab-operator
-  labels: {{- include "opslab.labels" . | nindent 4 }}
+  name: brokelabs-operator
+  labels: {{- include "brokelabs.labels" . | nindent 4 }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: opslab-operator
+  name: brokelabs-operator
 subjects:
   - kind: ServiceAccount
-    name: opslab-operator
+    name: brokelabs-operator
     namespace: {{ .Release.Namespace }}
 ---
 # Files of challenges installed from registries, stored next to the platform.
@@ -34,9 +34,9 @@ subjects:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: opslab-operator-packages
+  name: brokelabs-operator-packages
   namespace: {{ .Release.Namespace }}
-  labels: {{- include "opslab.labels" . | nindent 4 }}
+  labels: {{- include "brokelabs.labels" . | nindent 4 }}
 rules:
   - apiGroups: [""]
     resources: [configmaps]
@@ -45,16 +45,16 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: opslab-operator-packages
+  name: brokelabs-operator-packages
   namespace: {{ .Release.Namespace }}
-  labels: {{- include "opslab.labels" . | nindent 4 }}
+  labels: {{- include "brokelabs.labels" . | nindent 4 }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: opslab-operator-packages
+  name: brokelabs-operator-packages
 subjects:
   - kind: ServiceAccount
-    name: opslab-operator
+    name: brokelabs-operator
     namespace: {{ .Release.Namespace }}
 ---
 {{- if eq .Values.profile "cluster" }}
@@ -62,9 +62,9 @@ subjects:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: opslab-operator-leader-election
+  name: brokelabs-operator-leader-election
   namespace: {{ .Release.Namespace }}
-  labels: {{- include "opslab.labels" . | nindent 4 }}
+  labels: {{- include "brokelabs.labels" . | nindent 4 }}
 rules:
   - apiGroups: [coordination.k8s.io]
     resources: [leases]
@@ -76,50 +76,50 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: opslab-operator-leader-election
+  name: brokelabs-operator-leader-election
   namespace: {{ .Release.Namespace }}
-  labels: {{- include "opslab.labels" . | nindent 4 }}
+  labels: {{- include "brokelabs.labels" . | nindent 4 }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: opslab-operator-leader-election
+  name: brokelabs-operator-leader-election
 subjects:
   - kind: ServiceAccount
-    name: opslab-operator
+    name: brokelabs-operator
     namespace: {{ .Release.Namespace }}
 ---
 {{- end }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: opslab-operator
+  name: brokelabs-operator
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "opslab.labels" . | nindent 4 }}
+    {{- include "brokelabs.labels" . | nindent 4 }}
     app.kubernetes.io/name: {{ $name }}
 spec:
-  replicas: {{ include "opslab.replicas" . }}
+  replicas: {{ include "brokelabs.replicas" . }}
   selector:
-    matchLabels: {{- include "opslab.selector" (dict "root" . "name" $name) | nindent 6 }}
+    matchLabels: {{- include "brokelabs.selector" (dict "root" . "name" $name) | nindent 6 }}
   template:
     metadata:
       labels:
-        {{- include "opslab.labels" . | nindent 8 }}
+        {{- include "brokelabs.labels" . | nindent 8 }}
         app.kubernetes.io/name: {{ $name }}
     spec:
-      serviceAccountName: opslab-operator
-      securityContext: {{- include "opslab.podSecurityContext" . | nindent 8 }}
+      serviceAccountName: brokelabs-operator
+      securityContext: {{- include "brokelabs.podSecurityContext" . | nindent 8 }}
       nodeSelector:
         kubernetes.io/arch: amd64
       containers:
         - name: operator
-          image: {{ include "opslab.image" (dict "root" . "name" $name) }}
+          image: {{ include "brokelabs.image" (dict "root" . "name" $name) }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           args:
             - --metrics-bind-address=:8080
             - --health-probe-bind-address=:8081
-            - --checker-image={{ .Values.operator.checkerImage | default (include "opslab.image" (dict "root" . "name" "checker")) }}
-            - --gateway-service-account={{ .Release.Namespace }}/opslab-gateway
+            - --checker-image={{ .Values.operator.checkerImage | default (include "brokelabs.image" (dict "root" . "name" "checker")) }}
+            - --gateway-service-account={{ .Release.Namespace }}/brokelabs-gateway
             # Pods let into instances with vm machines over SSH: the operator
             # (setup) and the gateway (terminals).
             - --operator-pod-labels=app.kubernetes.io/instance={{ .Release.Name }},app.kubernetes.io/name={{ $name }}
@@ -130,10 +130,10 @@ spec:
             {{- if .Values.mirror.enabled }}
             # Push access to the registry mirror (PlatformConfig.registryMirror),
             # read at every copy so that new credentials need no restart.
-            - --mirror-credentials=/etc/opslab/mirror
+            - --mirror-credentials=/etc/brokelabs/mirror
             {{- end }}
             {{- if .Values.operator.sigstoreTrustedRoot.configMap }}
-            - --sigstore-trusted-root=/etc/opslab/sigstore/trusted_root.json
+            - --sigstore-trusted-root=/etc/brokelabs/sigstore/trusted_root.json
             {{- end }}
             {{- if eq .Values.profile "cluster" }}
             - --leader-elect
@@ -150,20 +150,20 @@ spec:
             httpGet: {path: /healthz, port: probes}
           readinessProbe:
             httpGet: {path: /readyz, port: probes}
-          securityContext: {{- include "opslab.containerSecurityContext" . | nindent 12 }}
+          securityContext: {{- include "brokelabs.containerSecurityContext" . | nindent 12 }}
           resources: {{- toYaml .Values.operator.resources | nindent 12 }}
           volumeMounts:
             {{- if .Values.mirror.enabled }}
-            - {name: mirror-credentials, mountPath: /etc/opslab/mirror, readOnly: true}
+            - {name: mirror-credentials, mountPath: /etc/brokelabs/mirror, readOnly: true}
             {{- end }}
             {{- if .Values.operator.sigstoreTrustedRoot.configMap }}
-            - {name: sigstore-trusted-root, mountPath: /etc/opslab/sigstore, readOnly: true}
+            - {name: sigstore-trusted-root, mountPath: /etc/brokelabs/sigstore, readOnly: true}
             {{- end }}
       volumes:
         {{- if .Values.mirror.enabled }}
         - name: mirror-credentials
           secret:
-            secretName: {{ include "opslab.mirrorSecret" . }}
+            secretName: {{ include "brokelabs.mirrorSecret" . }}
             items: [{key: username, path: username}, {key: password, path: password}]
         {{- end }}
         {{- with .Values.operator.sigstoreTrustedRoot.configMap }}
