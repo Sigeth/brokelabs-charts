@@ -1,0 +1,69 @@
+{{- /*
+User namespaces for root runtimes (D50). The operator labels the instance
+namespaces of userns and vcluster machines, which enforce only the baseline Pod
+Security Standard: every pod created there gets hostUsers: false, and a pod
+without it is rejected (fail closed if the mutation is missing). The operator
+enables those runtimes only when all four objects exist, under these names.
+*/}}
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingAdmissionPolicy
+metadata:
+  name: brokelabs-user-namespaces
+  labels:
+    {{- include "brokelabs.labels" . | nindent 4 }}
+spec:
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [""]
+        apiVersions: [v1]
+        operations: [CREATE]
+        resources: [pods]
+    namespaceSelector:
+      matchLabels:
+        brokelabs.io/user-namespaces: "true"
+  failurePolicy: Fail
+  reinvocationPolicy: IfNeeded
+  mutations:
+    - patchType: ApplyConfiguration
+      applyConfiguration:
+        expression: "Object{spec: Object.spec{hostUsers: false}}"
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingAdmissionPolicyBinding
+metadata:
+  name: brokelabs-user-namespaces
+  labels:
+    {{- include "brokelabs.labels" . | nindent 4 }}
+spec:
+  policyName: brokelabs-user-namespaces
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: brokelabs-user-namespaces
+  labels:
+    {{- include "brokelabs.labels" . | nindent 4 }}
+spec:
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [""]
+        apiVersions: [v1]
+        operations: [CREATE, UPDATE]
+        resources: [pods]
+    namespaceSelector:
+      matchLabels:
+        brokelabs.io/user-namespaces: "true"
+  failurePolicy: Fail
+  validations:
+    - expression: "has(object.spec.hostUsers) && object.spec.hostUsers == false"
+      message: "pods in this namespace must run in a user namespace (hostUsers: false)"
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: brokelabs-user-namespaces
+  labels:
+    {{- include "brokelabs.labels" . | nindent 4 }}
+spec:
+  policyName: brokelabs-user-namespaces
+  validationActions: [Deny]

@@ -7,4 +7,4 @@ appVersion: "0.5.0"
 annotations:
   artifacthub.io/license: MIT
 home: https://github.com/Sigeth/brokelabs-charts
-kubeVersion: ">=1.30.0-0"
+kubeVersion: ">=1.36.0-0"
