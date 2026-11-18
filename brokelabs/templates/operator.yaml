@@ -120,6 +120,7 @@ spec:
             - --health-probe-bind-address=:8081
             - --checker-image={{ .Values.operator.checkerImage | default (include "brokelabs.image" (dict "root" . "name" "checker")) }}
             - --gateway-service-account={{ .Release.Namespace }}/brokelabs-gateway
+            - --vcluster-role=brokelabs-vcluster
             # Pods let into instances with vm machines over SSH: the operator
             # (setup) and the gateway (terminals).
             - --operator-pod-labels=app.kubernetes.io/instance={{ .Release.Name }},app.kubernetes.io/name={{ $name }}
@@ -172,3 +173,14 @@ spec:
             name: {{ . }}
             items: [{key: {{ $.Values.operator.sigstoreTrustedRoot.key }}, path: trusted_root.json}]
         {{- end }}
+---
+# Bound by the operator to the control plane of vcluster machines in their
+# instance namespace. Rules generated from the operator's embedded vcluster
+# chart (files/vcluster-role.yaml).
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: brokelabs-vcluster
+  labels: {{- include "brokelabs.labels" . | nindent 4 }}
+rules:
+  {{- (.Files.Get "files/vcluster-role.yaml" | fromYaml).rules | toYaml | nindent 2 }}

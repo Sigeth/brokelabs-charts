@@ -1,0 +1,51 @@
+{{- /*
+Network policies in user namespace instances (vcluster). vcluster copies the
+student's NetworkPolicies into the instance namespace, and policies only add
+allows: a rule with no peers, an ipBlock or a namespaceSelector would let the
+student's pods out of the instance (the platform, other instances, the
+internet). Only the operator may write such rules there; any other policy may
+name pods of its own namespace only. The operator enables vcluster machines
+only when this policy and its binding exist, under this name.
+*/}}
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: brokelabs-instance-network-policies
+  labels:
+    {{- include "brokelabs.labels" . | nindent 4 }}
+spec:
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [networking.k8s.io]
+        apiVersions: [v1]
+        operations: [CREATE, UPDATE]
+        resources: [networkpolicies]
+    namespaceSelector:
+      matchLabels:
+        brokelabs.io/user-namespaces: "true"
+  matchConditions:
+    - name: not-the-operator
+      expression: "request.userInfo.username != 'system:serviceaccount:{{ .Release.Namespace }}:brokelabs-operator'"
+  failurePolicy: Fail
+  variables:
+    - name: podPeersOnly
+      expression: >-
+        object.spec.?ingress.orValue([]).all(r, size(r.?from.orValue([])) > 0 &&
+          r.from.all(p, has(p.podSelector) && !has(p.namespaceSelector) && !has(p.ipBlock))) &&
+        object.spec.?egress.orValue([]).all(r, size(r.?to.orValue([])) > 0 &&
+          r.to.all(p, has(p.podSelector) && !has(p.namespaceSelector) && !has(p.ipBlock)))
+  validations:
+    - expression: "variables.podPeersOnly"
+      message: >-
+        network policies of this instance may only allow traffic from and to its own pods:
+        every rule needs from/to peers, and peers cannot use ipBlock or namespaceSelector
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: brokelabs-instance-network-policies
+  labels:
+    {{- include "brokelabs.labels" . | nindent 4 }}
+spec:
+  policyName: brokelabs-instance-network-policies
+  validationActions: [Deny]

@@ -2,6 +2,7 @@
 # Copies the files the chart takes from other repositories:
 #   brokelabs/crds/                     <- brokelabs-core-go crds/ (tag in CORE_GO_VERSION)
 #   brokelabs/files/operator-role.yaml  <- brokelabs-operator config/rbac/role.yaml (tag in OPERATOR_VERSION)
+#   brokelabs/files/vcluster-role.yaml  <- brokelabs-operator config/rbac/vcluster-role.yaml (same tag)
 #
 # CORE_GO_DIR / OPERATOR_DIR use local checkouts instead (development).
 set -euo pipefail
@@ -27,10 +28,12 @@ fi
 
 if [[ -n "${OPERATOR_DIR:-}" ]]; then
   cp "$OPERATOR_DIR/config/rbac/role.yaml" brokelabs/files/operator-role.yaml
+  cp "$OPERATOR_DIR/config/rbac/vcluster-role.yaml" brokelabs/files/vcluster-role.yaml
 else
   tmp="$(mktemp -d)"
   fetch_dir brokelabs-operator "$(tr -d '[:space:]' < OPERATOR_VERSION)" config/rbac "$tmp"
   cp "$tmp/role.yaml" brokelabs/files/operator-role.yaml
+  cp "$tmp/vcluster-role.yaml" brokelabs/files/vcluster-role.yaml
   rm -rf -- "$tmp"
 fi
-echo "synced CRDs and operator role"
+echo "synced CRDs and operator roles"
