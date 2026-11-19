@@ -2,8 +2,8 @@ apiVersion: v2
 name: brokelabs
 description: Self-hosted hands-on DevOps security challenges on Kubernetes
 type: application
-version: 0.5.0
-appVersion: "0.5.0"
+version: 0.6.0
+appVersion: "0.6.0"
 annotations:
   artifacthub.io/license: MIT
 home: https://github.com/Sigeth/brokelabs-charts

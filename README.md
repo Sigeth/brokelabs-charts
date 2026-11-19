@@ -2,9 +2,15 @@
 
 Helm chart of BrokeLabs: the operator, the api (which also serves the web UI), the gateway and PostgreSQL, plus the CRDs, the RBAC of each component and the cluster-wide `PlatformConfig`.
 
-> Status: M1. Single-machine profile with a PostgreSQL pod; the cluster profile adds replicas and leader election.
+> Status: M4. Single-machine profile with a PostgreSQL pod; the cluster profile adds replicas and leader election.
 
 Components are versioned on their own: `versions` in `values.yaml` pins the released tag of each component image (`ghcr.io/sigeth/brokelabs-<component>:<version>`, published by the component's `release` workflow when it is tagged). Bump a component there when it is released.
+
+## Requirements
+
+- Kubernetes 1.36 or later: the chart's admission policies (user namespaces for `userns` and `vcluster` machines, the guard on synced NetworkPolicies) use `MutatingAdmissionPolicy`.
+- Cilium as the cluster network: it enforces NetworkPolicies and drops packets with a forged source address, which students who are root in their machines could otherwise send. `brokelabs addon cilium install` installs it (on k3s, start the server with `flannel-backend: none` and `disable-network-policy: true`).
+- KubeVirt for `vm` machines: `brokelabs addon kubevirt install`.
 
 ## Install
 
@@ -42,11 +48,12 @@ kubectl -n brokelabs-system get secret brokelabs-solo -o jsonpath='{.data.passwo
 | api | Read `Challenge`s, manage `ChallengeInstance`s and `CheckRun`s in the instances namespace, read ConfigMaps of the release namespace (inline package files) |
 | gateway | Read `ChallengeInstance`s. `pods/exec` in instance namespaces only, through the `brokelabs-gateway-exec` ClusterRole the operator binds there. |
 | checker | `pods/exec` in its instance namespace only (`brokelabs-checker-exec`, bound by the operator) |
-| operator | Generated from its RBAC markers (`files/operator-role.yaml`) |
+| operator | Generated from its RBAC markers (`files/operator-role.yaml`). It binds only the gateway, checker and `brokelabs-vcluster` ClusterRoles. |
+| vcluster | `brokelabs-vcluster` (`files/vcluster-role.yaml`), bound by the operator in the namespace of each virtual cluster |
 
 ## Files synced from other repositories
 
-`brokelabs/crds/` comes from [brokelabs-core-go](https://github.com/Sigeth/brokelabs-core-go), at the tag in `CORE_GO_VERSION`. `brokelabs/files/operator-role.yaml` comes from [brokelabs-operator](https://github.com/Sigeth/brokelabs-operator), at the tag in `OPERATOR_VERSION`. Don't edit these files: bump the tag and run `make sync`. CI fails if they drift.
+`brokelabs/crds/` comes from [brokelabs-core-go](https://github.com/Sigeth/brokelabs-core-go), at the tag in `CORE_GO_VERSION`. `brokelabs/files/operator-role.yaml` and `brokelabs/files/vcluster-role.yaml` come from [brokelabs-operator](https://github.com/Sigeth/brokelabs-operator), at the tag in `OPERATOR_VERSION`. Don't edit these files: bump the tag and run `make sync`. CI fails if they drift.
 
 ## Development
 

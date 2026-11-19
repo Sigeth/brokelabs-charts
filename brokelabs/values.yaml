@@ -12,11 +12,11 @@ image:
 # Released version of each component image (<registry>/brokelabs-<component>).
 # Components are versioned on their own: bump one when it is released.
 versions:
-  operator: v0.6.0
-  checker: v0.5.0
-  api: v0.4.0
-  web: v0.4.0
-  gateway: v0.4.0
+  operator: v0.7.0
+  checker: v0.6.0
+  api: v0.5.0
+  web: v0.5.0
+  gateway: v0.5.0
 
 # Namespace holding ChallengeInstances, CheckRuns and instance resources.
 instancesNamespace:
