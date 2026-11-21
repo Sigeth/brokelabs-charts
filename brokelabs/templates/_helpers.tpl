@@ -52,8 +52,21 @@ http://localhost:8081
 {{- define "brokelabs.allowedOrigins" -}}
 {{- if .Values.api.allowedOrigins -}}
 {{ join "," .Values.api.allowedOrigins }}
+{{- else if .Values.api.publicURL -}}
+{{ trimSuffix "/" .Values.api.publicURL }}
 {{- else if .Values.httpRoute.hostname -}}
 https://{{ .Values.httpRoute.hostname }}
+{{- end -}}
+{{- end }}
+
+{{- /* Public URL of the platform, as browsers reach it. */}}
+{{- define "brokelabs.publicURL" -}}
+{{- if .Values.api.publicURL -}}
+{{ trimSuffix "/" .Values.api.publicURL }}
+{{- else if .Values.httpRoute.hostname -}}
+https://{{ .Values.httpRoute.hostname }}
+{{- else -}}
+http://localhost:8080
 {{- end -}}
 {{- end }}
 

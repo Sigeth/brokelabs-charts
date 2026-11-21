@@ -80,6 +80,10 @@ api:
   allowedOrigins: []
   # Session cookies over HTTPS only (browsers accept them on http://localhost).
   cookieSecure: true
+  # Public URL of the platform, as browsers reach it (single sign-on comes
+  # back to it). Defaults to https://<httpRoute.hostname>, else
+  # http://localhost:8080.
+  publicURL: ""
   resources:
     requests: {cpu: 50m, memory: 64Mi}
     limits: {memory: 256Mi}
@@ -117,6 +121,34 @@ mode: solo
 admin:
   username: admin
   passwordSecret: ""
+
+# Single sign-on with an OpenID Connect provider (Keycloak, Entra ID, Google
+# Workspace, Dex...). Register a confidential client whose redirect URI is
+# <api.publicURL>/api/v1/auth/oidc/callback. Accounts are created at their
+# first sign-in.
+oidc:
+  enabled: false
+  issuer: ""
+  clientID: ""
+  # Existing Secret with the client secret under "clientSecret". Empty: a
+  # public client (PKCE only).
+  clientSecretName: ""
+  # Text of the sign-in button.
+  label: Single sign-on
+  # Space-separated. Add the scope that makes your provider send groups
+  # (e.g. "groups" for Dex and Keycloak).
+  scopes: openid profile email
+  # ID token claim with the user's groups (dots reach nested claims, e.g.
+  # realm_access.roles for Keycloak realm roles).
+  groupsClaim: groups
+  # When either list is set, the provider's groups decide the role at every
+  # sign-in (admin first, then teacher, else student). When both are empty,
+  # new accounts are students and admins change roles in the Users page.
+  adminGroups: []
+  teacherGroups: []
+  # Existing ConfigMap with extra CA certificates (PEM) under "ca.crt", for a
+  # provider behind a private CA.
+  caConfigMap: ""
 
 # Single PostgreSQL pod. Disable it to use an external database
 # (api.databaseSecret).

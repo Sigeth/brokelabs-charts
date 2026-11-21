@@ -28,11 +28,13 @@ helm install brokelabs ./brokelabs --namespace brokelabs-system --create-namespa
 | `instancesNamespace.name` | `brokelabs-instances` | Namespace of student instances (Pod Security `restricted`) |
 | `platform.*` | | Cluster-wide policy (`PlatformConfig`) |
 | `api.signingKeySecret` | generated | Secret holding the Ed25519 access token key (`key.pem`) |
-| `api.allowedOrigins` | `https://<httpRoute.hostname>` | Origins allowed to change state with the session cookie (CSRF) |
+| `api.allowedOrigins` | `api.publicURL`, else `https://<httpRoute.hostname>` | Origins allowed to change state with the session cookie (CSRF) |
+| `api.publicURL` | `https://<httpRoute.hostname>`, else `http://localhost:8080` | Platform URL as browsers reach it (single sign-on comes back to it) |
 | `gateway.publicURL` | `https://<httpRoute.gatewayHostname>` | Gateway URL as browsers reach it (terminals) |
 | `operator.checkerImage` | `<image.registry>/brokelabs-checker:<versions.checker>` | Built-in checker |
 | `mode` | `solo` | `solo` (one person, no users or classrooms) or `organization` (accounts, roles and classrooms). |
 | `admin.username` / `admin.passwordSecret` | `admin` / generated | First admin account (the only one in solo mode). The generated password is in the `brokelabs-admin` Secret. |
+| `oidc.*` | disabled | Single sign-on with an OpenID Connect provider: `issuer`, `clientID`, `clientSecretName` (Secret key `clientSecret`), `label`, `scopes`, `groupsClaim`, `adminGroups` and `teacherGroups` (when set, the provider's groups decide roles at every sign-in), `caConfigMap` (key `ca.crt`). Register the redirect URI `<api.publicURL>/api/v1/auth/oidc/callback`. |
 | `postgres.enabled` | `true` | Single PostgreSQL pod with a PVC. Set `false` and `api.databaseSecret` (key `url`) for an external database. |
 | `httpRoute.*` | disabled | Gateway API routes for the UI/api and the gateway |
 

@@ -86,6 +86,24 @@ spec:
             - {name: BROKELABS_ALLOWED_ORIGINS, value: {{ include "brokelabs.allowedOrigins" . | quote }}}
             - {name: BROKELABS_COOKIE_SECURE, value: {{ .Values.api.cookieSecure | quote }}}
             - {name: BROKELABS_MODE, value: {{ .Values.mode | quote }}}
+            - {name: BROKELABS_PUBLIC_URL, value: {{ include "brokelabs.publicURL" . | quote }}}
+            {{- with .Values.oidc }}
+            {{- if .enabled }}
+            - {name: BROKELABS_OIDC_ISSUER, value: {{ required "oidc.issuer is required when oidc.enabled" .issuer | quote }}}
+            - {name: BROKELABS_OIDC_CLIENT_ID, value: {{ required "oidc.clientID is required when oidc.enabled" .clientID | quote }}}
+            - {name: BROKELABS_OIDC_LABEL, value: {{ .label | quote }}}
+            - {name: BROKELABS_OIDC_SCOPES, value: {{ .scopes | quote }}}
+            - {name: BROKELABS_OIDC_GROUPS_CLAIM, value: {{ .groupsClaim | quote }}}
+            - {name: BROKELABS_OIDC_ADMIN_GROUPS, value: {{ join "," .adminGroups | quote }}}
+            - {name: BROKELABS_OIDC_TEACHER_GROUPS, value: {{ join "," .teacherGroups | quote }}}
+            {{- if .clientSecretName }}
+            - {name: BROKELABS_OIDC_CLIENT_SECRET_FILE, value: /etc/brokelabs/oidc/clientSecret}
+            {{- end }}
+            {{- if .caConfigMap }}
+            - {name: BROKELABS_OIDC_CA_FILE, value: /etc/brokelabs/oidc-ca/ca.crt}
+            {{- end }}
+            {{- end }}
+            {{- end }}
             - {name: BROKELABS_ADMIN_USERNAME, value: {{ .Values.admin.username | quote }}}
             - {name: BROKELABS_ADMIN_PASSWORD_FILE, value: /etc/brokelabs/admin/password}
           ports:
@@ -99,6 +117,12 @@ spec:
             - {name: signing-key, mountPath: /etc/brokelabs/signing-key, readOnly: true}
             - {name: database, mountPath: /etc/brokelabs/database, readOnly: true}
             - {name: admin, mountPath: /etc/brokelabs/admin, readOnly: true}
+            {{- if and .Values.oidc.enabled .Values.oidc.clientSecretName }}
+            - {name: oidc, mountPath: /etc/brokelabs/oidc, readOnly: true}
+            {{- end }}
+            {{- if and .Values.oidc.enabled .Values.oidc.caConfigMap }}
+            - {name: oidc-ca, mountPath: /etc/brokelabs/oidc-ca, readOnly: true}
+            {{- end }}
           securityContext: {{- include "brokelabs.containerSecurityContext" . | nindent 12 }}
           resources: {{- toYaml .Values.api.resources | nindent 12 }}
       volumes:
@@ -115,6 +139,18 @@ spec:
           secret:
             secretName: {{ .Values.admin.passwordSecret | default "brokelabs-admin" }}
             items: [{key: password, path: password}]
+        {{- if and .Values.oidc.enabled .Values.oidc.clientSecretName }}
+        - name: oidc
+          secret:
+            secretName: {{ .Values.oidc.clientSecretName }}
+            items: [{key: clientSecret, path: clientSecret}]
+        {{- end }}
+        {{- if and .Values.oidc.enabled .Values.oidc.caConfigMap }}
+        - name: oidc-ca
+          configMap:
+            name: {{ .Values.oidc.caConfigMap }}
+            items: [{key: ca.crt, path: ca.crt}]
+        {{- end }}
 ---
 apiVersion: v1
 kind: Service
