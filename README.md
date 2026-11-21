@@ -31,14 +31,15 @@ helm install brokelabs ./brokelabs --namespace brokelabs-system --create-namespa
 | `api.allowedOrigins` | `https://<httpRoute.hostname>` | Origins allowed to change state with the session cookie (CSRF) |
 | `gateway.publicURL` | `https://<httpRoute.gatewayHostname>` | Gateway URL as browsers reach it (terminals) |
 | `operator.checkerImage` | `<image.registry>/brokelabs-checker:<versions.checker>` | Built-in checker |
-| `solo.username` / `solo.passwordSecret` | `admin` / generated | Solo mode account. The generated password is in the `brokelabs-solo` Secret. |
+| `mode` | `solo` | `solo` (one person, no users or classrooms) or `organization` (accounts, roles and classrooms). |
+| `admin.username` / `admin.passwordSecret` | `admin` / generated | First admin account (the only one in solo mode). The generated password is in the `brokelabs-admin` Secret. |
 | `postgres.enabled` | `true` | Single PostgreSQL pod with a PVC. Set `false` and `api.databaseSecret` (key `url`) for an external database. |
 | `httpRoute.*` | disabled | Gateway API routes for the UI/api and the gateway |
 
-The api's access token key, the PostgreSQL password and the solo password are generated at install time and kept across upgrades. Read the solo password with:
+The api's access token key, the PostgreSQL password and the admin password are generated at install time and kept across upgrades. Read the admin password with:
 
 ```sh
-kubectl -n brokelabs-system get secret brokelabs-solo -o jsonpath='{.data.password}' | base64 -d
+kubectl -n brokelabs-system get secret brokelabs-admin -o jsonpath='{.data.password}' | base64 -d
 ```
 
 ## Permissions

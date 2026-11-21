@@ -105,11 +105,16 @@ httpRoute:
   # Gateway (terminals), e.g. gw.brokelabs.example.org
   gatewayHostname: ""
 
-# Solo mode: one local account for an individual running BrokeLabs for
-# themselves. The password is generated at install time and kept across
-# upgrades (Secret brokelabs-solo, key "password"), unless passwordSecret names
-# an existing Secret with a "password" key.
-solo:
+# How the platform is used (D12):
+# solo: one person running BrokeLabs for themselves (no users or classrooms).
+# organization: a school or team, with accounts, roles and classrooms.
+mode: solo
+
+# First admin account, created when there is no user yet (in solo mode, the
+# only account). The password is generated at install time and kept across
+# upgrades (Secret brokelabs-admin, key "password"), unless passwordSecret
+# names an existing Secret with a "password" key.
+admin:
   username: admin
   passwordSecret: ""
 

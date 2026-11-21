@@ -1,3 +1,9 @@
 {{- if not (has .Values.profile (list "single" "cluster")) }}
 {{- fail (printf "profile must be single or cluster, got %q" .Values.profile) }}
 {{- end }}
+{{- if not (has .Values.mode (list "solo" "organization")) }}
+{{- fail (printf "mode must be solo or organization, got %q" .Values.mode) }}
+{{- end }}
+{{- if .Values.solo }}
+{{- fail "the solo values were renamed: use admin.username and admin.passwordSecret (and mode)" }}
+{{- end }}
