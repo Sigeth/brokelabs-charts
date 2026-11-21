@@ -99,6 +99,9 @@ spec:
             {{- if .clientSecretName }}
             - {name: BROKELABS_OIDC_CLIENT_SECRET_FILE, value: /etc/brokelabs/oidc/clientSecret}
             {{- end }}
+            {{- if .backchannelURL }}
+            - {name: BROKELABS_OIDC_BACKCHANNEL_URL, value: {{ .backchannelURL | quote }}}
+            {{- end }}
             {{- if .caConfigMap }}
             - {name: BROKELABS_OIDC_CA_FILE, value: /etc/brokelabs/oidc-ca/ca.crt}
             {{- end }}

@@ -34,7 +34,7 @@ helm install brokelabs ./brokelabs --namespace brokelabs-system --create-namespa
 | `operator.checkerImage` | `<image.registry>/brokelabs-checker:<versions.checker>` | Built-in checker |
 | `mode` | `solo` | `solo` (one person, no users or classrooms) or `organization` (accounts, roles and classrooms). |
 | `admin.username` / `admin.passwordSecret` | `admin` / generated | First admin account (the only one in solo mode). The generated password is in the `brokelabs-admin` Secret. |
-| `oidc.*` | disabled | Single sign-on with an OpenID Connect provider: `issuer`, `clientID`, `clientSecretName` (Secret key `clientSecret`), `label`, `scopes`, `groupsClaim`, `adminGroups` and `teacherGroups` (when set, the provider's groups decide roles at every sign-in), `caConfigMap` (key `ca.crt`). Register the redirect URI `<api.publicURL>/api/v1/auth/oidc/callback`. |
+| `oidc.*` | disabled | Single sign-on with an OpenID Connect provider: `issuer`, `clientID`, `clientSecretName` (Secret key `clientSecret`), `label`, `scopes`, `groupsClaim`, `adminGroups` and `teacherGroups` (when set, the provider's groups decide roles at every sign-in), `caConfigMap` (key `ca.crt`), `backchannelURL` (where the api reaches the provider when browsers use another address). Register the redirect URI `<api.publicURL>/api/v1/auth/oidc/callback`. |
 | `postgres.enabled` | `true` | Single PostgreSQL pod with a PVC. Set `false` and `api.databaseSecret` (key `url`) for an external database. |
 | `httpRoute.*` | disabled | Gateway API routes for the UI/api and the gateway |
 

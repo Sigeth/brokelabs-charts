@@ -149,6 +149,12 @@ oidc:
   # Existing ConfigMap with extra CA certificates (PEM) under "ca.crt", for a
   # provider behind a private CA.
   caConfigMap: ""
+  # Where the api reaches the provider when browsers and the cluster use
+  # different addresses, e.g. an in-cluster Keycloak Service
+  # (http://keycloak.sso.svc:8080) while browsers use https://sso.school.org.
+  # The api sends its requests for the issuer's origin to this origin
+  # (scheme, host and port). Empty: the issuer URL.
+  backchannelURL: ""
 
 # Single PostgreSQL pod. Disable it to use an external database
 # (api.databaseSecret).
